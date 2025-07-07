@@ -13,7 +13,12 @@ keycloak_openid = KeycloakOpenID(
 )
 
 jwks_url = f"{os.environ['KEYCLOAK_URL']}/realms/default/protocol/openid-connect/certs"
-jwks = requests.get(jwks_url).json()
+try:
+  jwks_response = requests.get(jwks_url)
+  jwks = jwks_response.json()
+except Exception as e:
+  raise Exception(f"Failed to fetch Keycloak JWKS from {jwks_url}: {e}. Response error {jwks_response.text}")
+
 
 class TokenVerifier:
   def __init__(self, roles: list = []):
