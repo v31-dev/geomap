@@ -7,15 +7,11 @@ from datetime import datetime
 
 from api.services.glad import update_layers, get_meta, filter_dates
 from api.services.keycloak import TokenVerifier
-from api.services.cookie import SessionIDCookieMiddleware
 from api.services.util import generate_etag
 
 
 app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
 app.state.layers_cache = {}
-
-# SessionID Cookie 
-app.add_middleware(SessionIDCookieMiddleware)
 
 # Tasks
 @app.on_event("startup")
