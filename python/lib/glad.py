@@ -8,6 +8,7 @@ import xarray as xr
 import numpy as np
 import pandas as pd
 import geopandas as gpd
+from io import BytesIO
 from tqdm import tqdm
 from tempfile import TemporaryDirectory
 from datetime import datetime, timedelta
@@ -53,11 +54,15 @@ class GLAD():
     '''
     if not 'interval_table' in self._cache:
       print('Downloading interval table from GLAD...')
+
+      # Ignore SSL verification
+      response = BytesIO(requests.get(self._interval_id_url, verify=False).content)
+
       # Interval ID table
-      self._interval_table = pd.read_excel(self._interval_id_url, sheet_name='16d interval ID', 
+      self._interval_table = pd.read_excel(response, sheet_name='16d interval ID', 
                                             header=1, index_col='Year')
       # Date lookup table
-      dates = pd.read_excel(self._interval_id_url, sheet_name='16d interval dates',
+      dates = pd.read_excel(response, sheet_name='16d interval dates',
                                             index_col='Interval ID')['end Date'].to_list()
       
       # Use the lookup table to create a date table
@@ -83,7 +88,9 @@ class GLAD():
     '''
     if not 'tile_geojson' in self._cache:
       print('Downloading tile geojson from GLAD...')
-      self._tile_geojson = gpd.read_file(self._tile_geojson_url)
+      # Ignore SSL verification
+      response = BytesIO(requests.get(self._tile_geojson_url, verify=False).content)
+      self._tile_geojson = gpd.read_file(response)
 
       self._cache.set('tile_geojson', self._tile_geojson)
 
