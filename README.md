@@ -45,6 +45,22 @@ The TCI layer can also be seen for different dates -
 The GLAD ARD Grid can also be overlayed to see the Tile IDs on click - 
 ![](docs/glad%20tile%20grid.png)
 
+Demo Tiles -
+- Paraguay
+  - 059W_20S
+  - 058W_20S
+  - 060W_20S
+  - 060W_19S
+  - 059W_19S
+  - 058W_19S
+- Brazil
+  - 055W_04S
+  - 054W_04S
+  - 056W_04S
+  - 056W_03S
+  - 055W_03S
+  - 054W_03S 
+
 
 ## Local Development
 
