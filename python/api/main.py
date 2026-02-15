@@ -22,11 +22,11 @@ def task_update_tiles() -> None:
   app.state.layers_cache = update_layers()
 
 # Routes
-@app.head("/meta")
+@app.head("/api/meta")
 def head_root():
   return {"status": "OK"}
 
-@app.get("/meta")
+@app.get("/api/meta")
 def get_root(_: dict = Depends(TokenVerifier()), 
              response: Response = None,
              if_none_match: str | None = Header(default=None)):
@@ -39,7 +39,7 @@ def get_root(_: dict = Depends(TokenVerifier()),
   else:
     return meta
 
-@app.get("/layers")
+@app.get("/api/layers")
 def get_geojson(_: dict = Depends(TokenVerifier()), 
                 date: Optional[datetime] = Query(None)):
   layers = copy.deepcopy(app.state.layers_cache)
