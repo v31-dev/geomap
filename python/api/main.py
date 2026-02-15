@@ -6,7 +6,7 @@ from typing import Optional
 from datetime import datetime
 
 from api.services.glad import update_layers, get_meta, filter_dates
-from api.services.keycloak import TokenVerifier
+from api.services.auth import TokenVerifier
 from api.services.util import generate_etag
 
 

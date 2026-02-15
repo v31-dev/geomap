@@ -2,13 +2,20 @@
 import axios from "axios"
 import { ref, watch } from "vue"
 import { Map, Layers, Sources, MapControls, Interactions, Styles } from "vue3-openlayers"
-import { useKeycloak } from '@dsb-norge/vue-keycloak-js'
+import { getAccessToken } from './auth'
 import GeoJSON from 'ol/format/GeoJSON'
 
 
-const { token } = useKeycloak()
 const api = axios.create({
-  baseURL: '/api', headers: { Authorization: `Bearer ${token}` }
+  baseURL: '/api'
+})
+
+api.interceptors.request.use(async (config) => {
+  const token = await getAccessToken()
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
 })
 const center = ref([0, 0])
 const zoom = ref(2)

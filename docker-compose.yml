@@ -1,6 +1,6 @@
 services:
   pocketbase:
-    build: https://github.com/v31-dev/dokploy-templates.git#:pocketbase
+    build: https://github.com/v31-dev/dokploy-templates.git#dev:pocketbase
     environment:
       - APP_NAME=Geomap
       - ADMIN_EMAIL=${ADMIN_EMAIL}
@@ -24,6 +24,8 @@ services:
             - '*.zarr'
             - pb_data
     restart: unless-stopped
+    depends_on:
+      - pocketbase
     environment:
       - S3_URL=${S3_URL}
       - S3_ACCESS_KEY=${S3_ACCESS_KEY}
@@ -49,6 +51,11 @@ services:
           target: /app
           ignore:
             - node_modules/
+    depends_on:
+      - python
+    environment:
+      - VITE_AUTH_URL=${AUTH_URL}
+      - VITE_AUTH_CLIENT_ID=${AUTH_CLIENT_ID}
     restart: unless-stopped
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/ || exit 1" ]
@@ -59,6 +66,10 @@ services:
     volumes:
     - ./nginx.conf:/etc/nginx/nginx.conf:ro
     restart: unless-stopped
+    depends_on:
+      - frontend
+      - python
+      - pocketbase
     ports:
       - 80:80
     

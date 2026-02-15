@@ -1,41 +1,14 @@
-from .db import db, BaseModel
+from peewee import Model, FixedCharField, FloatField
+
+from .db import db
 
 
-class ProcessTreecoverParams(BaseModel):
-    collection_name = "process_treecover_params"
-    schema = [
-        {
-            "name": "tile_id",
-            "type": "text",
-            "required": True,
-            "unique": True,
-            "options": {"min": 8, "max": 8}
-        },
-        {
-            "name": "ndvi_diff_cut_trees",
-            "type": "number",
-            "required": True
-        },
-        {
-            "name": "ndvi_tree_lower_bound",
-            "type": "number",
-            "required": True
-        }
-    ]
+class ProcessTreecoverParams(Model):
+  tile_id = FixedCharField(8, primary_key=True)
+  ndvi_diff_cut_trees = FloatField()
+  ndvi_tree_lower_bound = FloatField()
 
-    def __init__(self, tile_id: str, ndvi_diff_cut_trees: float, ndvi_tree_lower_bound: float):
-        super().__init__()
-        self.tile_id = tile_id
-        self.ndvi_diff_cut_trees = ndvi_diff_cut_trees
-        self.ndvi_tree_lower_bound = ndvi_tree_lower_bound
-
-    @classmethod
-    def get_by_id(cls, tile_id: str):
-        record = db.collection("process_treecover_params").get_one(tile_id)
-        return cls(
-            tile_id=record.tile_id,
-            ndvi_diff_cut_trees=record.ndvi_diff_cut_trees,
-            ndvi_tree_lower_bound=record.ndvi_tree_lower_bound
-        )
-
-ProcessTreecoverParams.create_collection()
+  class Meta:
+    database = db
+  
+db.create_tables([ProcessTreecoverParams])
