@@ -1,6 +1,8 @@
 import copy
+import os
 import uvicorn
 from fastapi import FastAPI, Depends, Query, Response, Header
+from fastapi.staticfiles import StaticFiles
 from fastapi_utils.tasks import repeat_every
 from typing import Optional
 from datetime import datetime
@@ -20,11 +22,11 @@ def task_update_tiles() -> None:
   app.state.layers_cache = update_layers()
 
 # Routes
-@app.head("/")
+@app.head("/meta")
 def head_root():
   return {"status": "OK"}
 
-@app.get("/")
+@app.get("/meta")
 def get_root(_: dict = Depends(TokenVerifier()), 
              response: Response = None,
              if_none_match: str | None = Header(default=None)):
@@ -43,6 +45,11 @@ def get_geojson(_: dict = Depends(TokenVerifier()),
   layers = copy.deepcopy(app.state.layers_cache)
   layers = filter_dates(layers, date=date)
   return layers
+
+# Mount static files (built frontend) in production
+static_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
+if os.path.exists(static_dir):
+  app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=4000, reload=True)

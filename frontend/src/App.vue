@@ -53,7 +53,7 @@ function isEmpty(obj) {
 }
 
 async function fetchMeta() {
-  const response = await api.get('/')
+  const response = await api.get('/meta')
   meta.value = response.data
   fetchLayers()
 }
