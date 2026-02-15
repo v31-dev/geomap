@@ -16,4 +16,4 @@ cache.db*
 # Data
 *.tif
 *.zarr
-pb_data
+data

@@ -25,7 +25,7 @@ def head_root():
   return {"status": "OK"}
 
 @app.get("/")
-def get_root(_: dict = Depends(TokenVerifier(roles=['access'])), 
+def get_root(_: dict = Depends(TokenVerifier()), 
              response: Response = None,
              if_none_match: str | None = Header(default=None)):
   meta = get_meta()
@@ -38,7 +38,7 @@ def get_root(_: dict = Depends(TokenVerifier(roles=['access'])),
     return meta
 
 @app.get("/layers")
-def get_geojson(_: dict = Depends(TokenVerifier(roles=['access'])), 
+def get_geojson(_: dict = Depends(TokenVerifier()), 
                 date: Optional[datetime] = Query(None)):
   layers = copy.deepcopy(app.state.layers_cache)
   layers = filter_dates(layers, date=date)

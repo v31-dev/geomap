@@ -7,7 +7,7 @@ if (!authority || !clientId) {
   console.error('Missing VITE_AUTH_URL or VITE_AUTH_CLIENT_ID')
 }
 
-const redirectUri = `${window.location.origin}/oidc/callback`
+const redirectUri = `${window.location.origin}/callback`
 const postLogoutRedirectUri = `${window.location.origin}/`
 
 const userManager = new UserManager({
@@ -22,7 +22,7 @@ const userManager = new UserManager({
 })
 
 export async function initAuth() {
-  if (window.location.pathname === '/oidc/callback') {
+  if (window.location.pathname === '/callback') {
     await userManager.signinRedirectCallback()
     window.location.replace('/')
     return null

@@ -1,6 +1,6 @@
 import os
-import json
 import jwt
+from jwt import PyJWK
 import requests
 from fastapi import HTTPException, Header
 
@@ -37,33 +37,12 @@ def _get_public_key(token_header: dict):
       break
   if not key:
     raise HTTPException(status_code=401, detail="Invalid token")
-  return jwt.algorithms.RSAAlgorithm.from_jwk(json.dumps(key))
-
-
-def _token_roles(decoded_token: dict):
-  roles = set()
-  if "roles" in decoded_token and isinstance(decoded_token["roles"], list):
-    roles.update(decoded_token["roles"])
-  if "scope" in decoded_token and isinstance(decoded_token["scope"], str):
-    roles.update(decoded_token["scope"].split())
-  if "scp" in decoded_token:
-    scp = decoded_token["scp"]
-    if isinstance(scp, list):
-      roles.update(scp)
-    elif isinstance(scp, str):
-      roles.update(scp.split())
-  if "groups" in decoded_token and isinstance(decoded_token["groups"], list):
-    roles.update(decoded_token["groups"])
-  if client_id and "resource_access" in decoded_token:
-    access = decoded_token["resource_access"].get(client_id, {})
-    if "roles" in access:
-      roles.update(access["roles"])
-  return roles
+  return PyJWK.from_dict(key).key
 
 
 class TokenVerifier:
-  def __init__(self, roles: list = []):
-    self.roles = roles
+  def __init__(self):
+    pass
 
   def __call__(self, authorization: str = Header(None)):
     if not authorization:
@@ -84,13 +63,6 @@ class TokenVerifier:
         decode_kwargs["audience"] = client_id
 
       decoded_token = jwt.decode(token, public_key, **decode_kwargs)
-
-      if self.roles:
-        token_roles = _token_roles(decoded_token)
-        for role in self.roles:
-          if role not in token_roles:
-            raise HTTPException(status_code=401, detail=f"Role [{role}] is required.")
-
       return decoded_token
 
     except jwt.ExpiredSignatureError:

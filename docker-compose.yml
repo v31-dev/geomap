@@ -1,46 +1,45 @@
 services:
-  pocketbase:
-    build: https://github.com/v31-dev/dokploy-templates.git#dev:pocketbase
+  postgres:
+    image: postgres:18
     environment:
-      - APP_NAME=Geomap
-      - ADMIN_EMAIL=${ADMIN_EMAIL}
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
     volumes:
-      - ./pb_data:/pb_data
+      - ./data:/var/lib/postgresql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      start_period: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@example.com
+      - PGADMIN_DEFAULT_PASSWORD=password
+      - SCRIPT_NAME=/pgadmin
+      - PGADMIN_CONFIG_PROXY_X_FOR_COUNT=1
+      - PGADMIN_CONFIG_PROXY_X_PROTO_COUNT=1
+      - PGADMIN_CONFIG_PROXY_X_HOST_COUNT=1
+    depends_on:
+      - postgres
+    restart: unless-stopped
 
   python:
     build: python
-    develop:
-      watch:
-        - action: sync+restart
-          path: ./python
-          target: /app
-          ignore:
-            - __pycache__
-            - '*.pyc'
-            - '*.pyo'
-            - 'cache.db*'
-            - '*.tif'
-            - '*.zarr'
-            - pb_data
     restart: unless-stopped
-    depends_on:
-      - pocketbase
+    depends_on: 
+    - postgres
     environment:
       - S3_URL=${S3_URL}
       - S3_ACCESS_KEY=${S3_ACCESS_KEY}
       - S3_SECRET_KEY=${S3_SECRET_KEY}
       - PUBLIC_S3_URL=${PUBLIC_S3_URL}
-      - POCKETBASE_URL=${POCKETBASE_URL}
-      - ADMIN_EMAIL=${ADMIN_EMAIL}
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - POSTGRES_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       - AUTH_URL=${AUTH_URL}
       - AUTH_CLIENT_ID=${AUTH_CLIENT_ID}
-    healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:4000/ || exit 1" ]
-      start_period: 30s
-      retries: 20
-      timeout: 240s
 
   frontend:
     build: frontend
@@ -57,9 +56,6 @@ services:
       - VITE_AUTH_URL=${AUTH_URL}
       - VITE_AUTH_CLIENT_ID=${AUTH_CLIENT_ID}
     restart: unless-stopped
-    healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/ || exit 1" ]
-      start_period: 5s
 
   nginx:
     image: nginx:alpine
@@ -69,7 +65,8 @@ services:
     depends_on:
       - frontend
       - python
-      - pocketbase
+      - postgres
+      - pgadmin
     ports:
       - 80:80
     
