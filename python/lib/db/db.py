@@ -1,7 +1,48 @@
 import os
-from peewee import PostgresqlDatabase
+from pocketbase import PocketBase
 
-db = PostgresqlDatabase(os.environ['POSTGRES_DB'], user=os.environ['POSTGRES_USER'], password=os.environ['POSTGRES_PASSWORD'],
-                           host=os.environ['POSTGRES_URL'], port=5432)
+# Connect and authenticate with PocketBase
+try:
+    db = PocketBase(os.environ['POCKETBASE_URL'])
+    db.admins.auth_with_password(
+        os.environ['ADMIN_EMAIL'], os.environ['ADMIN_PASSWORD'])
+except Exception as e:
+    raise Exception("Failed to connect to PocketBase with error: " + str(e))
 
-db.connect()
+
+class BaseModel():
+    def __init__(self):
+        if not hasattr(self.__class__, "collection_name"):
+            raise Exception("Missing collection_name in model class")
+
+        if not hasattr(self.__class__, "schema"):
+            raise Exception("Missing schema in model class")
+
+        self.collection_name = self.__class__.collection_name
+        self.schema = self.__class__.schema
+
+    def create(self):
+        data = {
+            field["name"]: getattr(self, field["name"])
+            for field in self.schema
+            if hasattr(self, field["name"])
+        }
+        return db.collection(self.collection_name).create(data)
+
+    @classmethod
+    def create_collection(cls):
+        try:
+            db.collections.get_one(cls.collection_name)
+            return
+        except Exception:
+            pass
+
+        try:
+            db.collections.create({
+                "name": cls.collection_name,
+                "type": "base",
+                "schema": cls.schema
+            })
+        except Exception as e:
+            raise Exception("Failed to create collection " +
+                            cls.collection_name + ": " + str(e))
