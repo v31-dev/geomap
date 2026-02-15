@@ -16,7 +16,7 @@ const userManager = new UserManager({
   redirect_uri: redirectUri,
   post_logout_redirect_uri: postLogoutRedirectUri,
   response_type: 'code',
-  scope: 'openid profile email',
+  scope: 'openid profile',
   automaticSilentRenew: false,
   userStore: new WebStorageStateStore({ store: window.localStorage })
 })
