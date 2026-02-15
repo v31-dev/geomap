@@ -3,6 +3,7 @@ import os
 import uvicorn
 from fastapi import FastAPI, Depends, Query, Response, Header
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from fastapi_utils.tasks import repeat_every
 from typing import Optional
 from datetime import datetime
@@ -49,6 +50,12 @@ def get_geojson(_: dict = Depends(TokenVerifier()),
 # Mount static files (built frontend) in production
 static_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
 if os.path.exists(static_dir):
+  # Catch-all route for SPA - serves index.html for unknown routes
+  @app.get("/{full_path:path}")
+  async def serve_spa(full_path: str):
+    # Return index.html for SPA routing (callback, etc)
+    return FileResponse(os.path.join(static_dir, "index.html"))
+  
   app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
 
 if __name__ == "__main__":
