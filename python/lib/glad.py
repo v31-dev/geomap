@@ -480,6 +480,7 @@ class GLAD():
       ----------
       - tile_id str: Tile ID in the format '054W_03S'
     '''
+    print(f'Deleting all images for Tile ID {tile_id}...')
     s3_key = f'{self._s3_root_path}/{tile_id}/'
     
     try:

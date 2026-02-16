@@ -128,6 +128,47 @@ docker run -d \
 4. Map a domain to port 4000.
 5. Deploy
 
+## Worker Processing
+
+A workflow orchestrator like GitHub Actions can be used for processing satellite data in background tasks.
+
+**Ingestion** - Ingest a new GLAD ARD tile
+
+```yaml
+- name: Setup
+  run: |
+    python3 -m venv base
+    source base/bin/activate
+    pip install -r python/requirements.txt
+
+- name: Ingest Tile
+  run: |
+    source base/bin/activate
+    python3 -u -m python.worker.ingest_glad_ard_tile ${{ inputs.tile_id }}
+```
+
+**Processing** - Process tiles into different output levels
+
+```bash
+python3 -u -m python.worker.process_glad_ard_tile ${{ inputs.tile_id }} ${{ inputs.level }}
+```
+
+Available processing levels: `rgba` and `treecover`
+
+**Deletion** - Remove a processed tile
+
+```bash
+python3 -u -m python.worker.delete_glad_ard_tile ${{ inputs.tile_id }}
+```
+
+### Configuration Parameters
+
+Processing behavior is controlled by configuration parameters maintained manually in the database:
+
+- `IngestParams.valid_image_pixels` - Minimum fraction of valid pixels required to ingest a tile (default: 0.7)
+- `ProcessTreeParams.ndvi_diff_cut_trees` - NDVI difference threshold between tree and cut/barren land (default: 0.25). When NDVI difference exceeds this between timestamps, the tree is marked as cut.
+- `ProcessTreeParams.ndvi_tree_lower_bound` - Minimum NDVI value to classify a pixel as tree (default: 0.7). Pixels below this are classified as cut/barren.
+
 ## Attributions
 
 - Landsat Analysis Ready Data (GLAD ARD) -
