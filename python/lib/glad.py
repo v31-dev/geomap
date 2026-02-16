@@ -56,7 +56,7 @@ class GLAD():
       print('Downloading interval table from GLAD...')
 
       # Ignore SSL verification
-      response = BytesIO(requests.get(self._interval_id_url, verify=False).content)
+      response = BytesIO(requests.get(self._interval_id_url).content)
 
       # Interval ID table
       self._interval_table = pd.read_excel(response, sheet_name='16d interval ID', 
@@ -89,7 +89,7 @@ class GLAD():
     if not 'tile_geojson' in self._cache:
       print('Downloading tile geojson from GLAD...')
       # Ignore SSL verification
-      response = BytesIO(requests.get(self._tile_geojson_url, verify=False).content)
+      response = BytesIO(requests.get(self._tile_geojson_url).content)
       self._tile_geojson = gpd.read_file(response)
 
       self._cache.set('tile_geojson', self._tile_geojson)
@@ -480,6 +480,7 @@ class GLAD():
       ----------
       - tile_id str: Tile ID in the format '054W_03S'
     '''
+    print(f'Deleting all images for Tile ID {tile_id}...')
     s3_key = f'{self._s3_root_path}/{tile_id}/'
     
     try:

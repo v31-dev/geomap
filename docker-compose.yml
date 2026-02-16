@@ -1,43 +1,72 @@
 services:
-  python:
-    build: 
-      context: python
-      target: production
+  postgres:
+    image: postgres:18
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - ./data:/var/lib/postgresql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      start_period: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@example.com
+      - PGADMIN_DEFAULT_PASSWORD=password
+      - SCRIPT_NAME=/pgadmin
+      - PGADMIN_CONFIG_PROXY_X_FOR_COUNT=1
+      - PGADMIN_CONFIG_PROXY_X_PROTO_COUNT=1
+      - PGADMIN_CONFIG_PROXY_X_HOST_COUNT=1
+    depends_on:
+      - postgres
     restart: unless-stopped
+
+  python:
+    build: python
+    restart: unless-stopped
+    depends_on: 
+    - postgres
     environment:
       - S3_URL=${S3_URL}
       - S3_ACCESS_KEY=${S3_ACCESS_KEY}
       - S3_SECRET_KEY=${S3_SECRET_KEY}
       - PUBLIC_S3_URL=${PUBLIC_S3_URL}
-      - POSTGRES_URL=${POSTGRES_URL}
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - KEYCLOAK_URL=${KEYCLOAK_URL}
-      - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID}
-    healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:4000/ || exit 1" ]
-      start_period: 30s
-      retries: 20
-      timeout: 240s
+      - POSTGRES_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - AUTH_URL=${AUTH_URL}
+      - AUTH_CLIENT_ID=${AUTH_CLIENT_ID}
 
   frontend:
-    build: 
-      context: frontend
-      target: production
+    build: frontend
+    develop:
+      watch:
+        - action: sync
+          path: ./frontend
+          target: /app
+          ignore:
+            - node_modules/
+    depends_on:
+      - python
     environment:
-      - VITE_KEYCLOAK_URL=${KEYCLOAK_URL}
-      - VITE_KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID}
+      - VITE_AUTH_URL=${AUTH_URL}
+      - VITE_AUTH_CLIENT_ID=${AUTH_CLIENT_ID}
     restart: unless-stopped
-    healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/ || exit 1" ]
-      start_period: 5s
 
   nginx:
     image: nginx:alpine
     volumes:
     - ./nginx.conf:/etc/nginx/nginx.conf:ro
     restart: unless-stopped
+    depends_on:
+      - frontend
+      - python
+      - postgres
+      - pgadmin
     ports:
       - 80:80
     
