@@ -1,21 +1,21 @@
 # Geo Map
 
-A satellite image processing application with a Vue frontend to see the Cloud Optimized GeoTIFF image layers. The satellite imagery is used from [Landsat Analysis Ready Data (GLAD ARD)](https://glad.umd.edu/ard/home). 
+A satellite image processing application with a Vue frontend to view Cloud Optimized GeoTIFF image layers from [Landsat Analysis Ready Data (GLAD ARD)](https://glad.umd.edu/ard/home).
 
-This is a docker compose application with different components -
+## Architecture
 
-- frontend - Made using [Vue](https://vuejs.org/) & [OpenLayers](https://vue3openlayers.netlify.app/).
+**Docker Compose Services:**
+- **frontend** - Vue 3 application with [OpenLayers](https://vue3openlayers.netlify.app/) for interactive mapping
+- **api** - [FastAPI](https://fastapi.tiangolo.com/) server providing metadata and tile information to the frontend
+- **worker** - Image processing service for satellite data ingestion and analysis (runs via GitHub Actions)
+- **nginx** - Reverse proxy routing frontend and backend from a single origin
+- **PostgreSQL** - Database for tracking run statistics and metadata
 
-- python - This has 2 sub components -
-  - api - [FastAPI](https://fastapi.tiangolo.com/) is used to create an HTTP API and provide meta information to the frontend for the map layers.
+**External Services:**
+- **S3** - Cloud storage for processed satellite imagery
+- **OIDC Provider** - Any OpenID Connect provider (e.g., Pocket ID, Auth0, Okta) for authentication
 
-  - worker - This is the image processing wrapper. It is run via GitHub Actions.
-
-  The [GLAD](lib/glad.py) class contains the main processing and ingestion logic of data. [example.ipynb](example.ipynb) Jupyter Notebook can be used to understand the working of this class.
-
-- nginx - Reverse proxy to have a single server for the frontend and backend components. Config is in [nginx.conf](nginx.conf).
-
-- External services - Data is stored in S3 and [Postgres](https://www.postgresql.org/) is used for tracking internal run statistics. [Keycloak](https://www.keycloak.org/) is used as an IDP.
+The [GLAD](lib/glad.py) class contains the main processing and ingestion logic. See [example.ipynb](example.ipynb) to understand the implementation details.
 
 
 ## Treecover Analysis
@@ -64,13 +64,69 @@ Demo Tiles -
 
 ## Local Development
 
-A `.devcontainer` configuration is enabled which provides a docker environment. This also initializes a venv `base` for Python development.
-Maintain the credentials in the `sample.env` file (rename it to `.env`). And then run - 
-```
-docker compose up --build
-``` 
-Watch and local development parameters are enabled in the `docker-compose.override.yml` file. The applciation is served on `http://localhost:80`.
+### Prerequisites
+- Docker and Docker Compose installed
+- A `.devcontainer` configuration is available for development in a containerized environment
+- `.env` file configured using `sample.env`
 
+### Running the App
+
+```bash
+docker compose up --build
+```
+
+The application will be available at `http://localhost`. Access is routed through Nginx, which sits in front of both the frontend and backend components.
+
+## Production Deployment
+
+### Building the Production Image
+
+The production deployment uses Docker to containerize the application with all dependencies:
+
+```bash
+# Build with OIDC credentials
+docker build \
+  --build-arg VITE_AUTH_URL=oidc-provider-url \
+  --build-arg VITE_AUTH_CLIENT_ID=client-id \
+  -t geomap:latest \
+  .
+
+# Run in production
+docker run -d \
+  -p 80:80 \
+  -e POSTGRES_URL=postgresql://user:pass@postgres-host:5432/geomap \
+  -e S3_URL=your-s3-url-with-bucket \
+  -e S3_ACCESS_KEY=s3-access-key \
+  -e S3_SECRET_KEY=s3-secret-key \
+  -e PUBLIC_S3_URL=s3-public-endpoint \
+  -e AUTH_URL=oidc-provider \
+  -e AUTH_CLIENT_ID=oidc-client-id \
+  geomap:latest
+```
+
+### External Dependencies
+
+1. **PostgreSQL** - Database for metadata and run statistics
+2. **S3-compatible storage** - For storing processed satellite tiles
+3. **OIDC Provider** - For authentication
+4. **Worker infrastructure** - For image processing tasks (GitHub Actions or similar CI/CD)
+
+### Deploying to Dokploy
+
+1. Add a service of type Application and point to the repository using the Git provider with build type Dockerfile.
+2. Add **Build Arguments** in the Environment tab:
+    - `VITE_AUTH_URL` - OIDC provider URL
+    - `VITE_AUTH_CLIENT_ID` - OIDC client ID
+3. Set **Environment Variables** in the Environment tab:
+    - `POSTGRES_URL` - PostgreSQL connection string
+    - `S3_URL` - S3 endpoint with bucket
+    - `S3_ACCESS_KEY` - S3 access key
+    - `S3_SECRET_KEY` - S3 secret key
+    - `PUBLIC_S3_URL` - Public endpoint for S3 assets
+    - `AUTH_URL` - OIDC provider base URL
+    - `AUTH_CLIENT_ID` - OIDC client ID
+4. Map a domain to port 4000.
+5. Deploy
 
 ## Attributions
 
