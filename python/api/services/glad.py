@@ -14,8 +14,6 @@ base_url = glad.get_image_base_url()
 
 
 def update_layers():
-  print('Updating layers cache...')
-
   tiles = glad.list_tiles(full=True)
 
   layers = [{
@@ -63,7 +61,6 @@ def update_layers():
           'date': image['Date']
         })
 
-  print('Updated layers cache...')
   return layers
 
 

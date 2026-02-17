@@ -1,6 +1,8 @@
 import copy
 import os
+import asyncio
 import uvicorn
+import logging
 from fastapi import FastAPI, Depends, Query, Response, Header
 from fastapi.responses import FileResponse
 from fastapi_utils.tasks import repeat_every
@@ -12,14 +14,21 @@ from api.services.auth import TokenVerifier
 from api.services.util import generate_etag
 
 
+logger = logging.getLogger("uvicorn.error")
+
 app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
 app.state.layers_cache = {}
 
 # Tasks
 @app.on_event("startup")
 @repeat_every(seconds=86400)
-def task_update_tiles() -> None:
-  app.state.layers_cache = update_layers()
+async def task_update_tiles() -> None:
+  logger.info("task_update_tiles: Starting layers cache update...")
+  try:
+    app.state.layers_cache = await asyncio.to_thread(update_layers)
+    logger.info("task_update_tiles: Completed layers cache update...")
+  except Exception as e:
+    logger.exception("task_update_tiles: Layers cache update failed with error: %s", e)
 
 # Routes
 @app.head("/api/meta")
