@@ -81,9 +81,10 @@ The application will be available at `http://localhost`. Access is routed throug
 
 ## Production Deployment
 
-### Building the Production Image
-
 The production deployment uses Docker to containerize the application with all dependencies:
+1. Builds the frontend static files (Vue 3 with Vite)
+2. Serves both backend API and frontend static files from a single Python process
+3. No nginx required - backend serves everything on port 4000
 
 ```bash
 # Build
@@ -95,7 +96,7 @@ docker build \
 
 # Run
 docker run -d \
-  -p 80:80 \
+  -p 4000:4000 \
   -e POSTGRES_URL=<connection string like postgresql://user:pass@postgres-host:5432/geomap> \
   -e S3_URL=your-s3-url-with-bucket \
   -e S3_ACCESS_KEY=s3-access-key \
