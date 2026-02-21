@@ -4,12 +4,12 @@ A satellite image processing application with a Vue frontend to view Cloud Optim
 
 ## Architecture
 
-**Docker Compose Services:**
+Docker Compose Services:
 - **frontend** - Vue 3 application with [OpenLayers](https://vue3openlayers.netlify.app/) for interactive mapping
 - **api** - [FastAPI](https://fastapi.tiangolo.com/) server providing metadata and tile information to the frontend
 - **worker** - Image processing service for satellite data ingestion and analysis (runs via GitHub Actions)
 - **nginx** - Reverse proxy routing frontend and backend from a single origin
-- **PostgreSQL** - Database for tracking run statistics and metadata
+- **postgres** - PostgreSQL database for tracking run statistics and metadata
 
 **External Services:**
 - **S3** - Cloud storage for processed satellite imagery
@@ -94,12 +94,12 @@ docker build \
 # Run in production
 docker run -d \
   -p 80:80 \
-  -e POSTGRES_URL=postgresql://user:pass@postgres-host:5432/geomap \
+  -e POSTGRES_URL=<connection string like postgresql://user:pass@postgres-host:5432/geomap> \
   -e S3_URL=your-s3-url-with-bucket \
   -e S3_ACCESS_KEY=s3-access-key \
   -e S3_SECRET_KEY=s3-secret-key \
   -e PUBLIC_S3_URL=s3-public-endpoint \
-  -e AUTH_URL=oidc-provider \
+  -e AUTH_URL=oidc-provider-url \
   -e AUTH_CLIENT_ID=oidc-client-id \
   geomap:latest
 ```
@@ -110,23 +110,6 @@ docker run -d \
 2. **S3-compatible storage** - For storing processed satellite tiles
 3. **OIDC Provider** - For authentication
 4. **Worker infrastructure** - For image processing tasks (GitHub Actions or similar CI/CD)
-
-### Deploying to Dokploy
-
-1. Add a service of type Application and point to the repository using the Git provider with build type Dockerfile.
-2. Add **Build Arguments** in the Environment tab:
-    - `VITE_AUTH_URL` - OIDC provider URL
-    - `VITE_AUTH_CLIENT_ID` - OIDC client ID
-3. Set **Environment Variables** in the Environment tab:
-    - `POSTGRES_URL` - PostgreSQL connection string
-    - `S3_URL` - S3 endpoint with bucket
-    - `S3_ACCESS_KEY` - S3 access key
-    - `S3_SECRET_KEY` - S3 secret key
-    - `PUBLIC_S3_URL` - Public endpoint for S3 assets
-    - `AUTH_URL` - OIDC provider base URL
-    - `AUTH_CLIENT_ID` - OIDC client ID
-4. Map a domain to port 4000.
-5. Deploy
 
 ## Worker Processing
 
