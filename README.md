@@ -4,14 +4,14 @@ A satellite image processing application with a Vue frontend to view Cloud Optim
 
 ## Architecture
 
-Docker Compose Services:
+### Docker Compose Services:
 - **frontend** - Vue 3 application with [OpenLayers](https://vue3openlayers.netlify.app/) for interactive mapping
 - **api** - [FastAPI](https://fastapi.tiangolo.com/) server providing metadata and tile information to the frontend
 - **worker** - Image processing service for satellite data ingestion and analysis (runs via GitHub Actions)
 - **nginx** - Reverse proxy routing frontend and backend from a single origin
 - **postgres** - PostgreSQL database for tracking run statistics and metadata
 
-**External Services:**
+### External Services:
 - **S3** - Cloud storage for processed satellite imagery
 - **OIDC Provider** - Any OpenID Connect provider (e.g., Pocket ID, Auth0, Okta) for authentication
 
@@ -65,8 +65,10 @@ Demo Tiles -
 ## Local Development
 
 ### Prerequisites
+- Python
+- NodeJS
 - Docker and Docker Compose installed
-- A `.devcontainer` configuration is available for development in a containerized environment
+- A `.devcontainer` configuration is available for development in a containerized environment. Or the setup can be simulated otherwise as well. Python venv is recommended.
 - `.env` file configured using `sample.env`
 
 ### Running the App
@@ -84,14 +86,14 @@ The application will be available at `http://localhost`. Access is routed throug
 The production deployment uses Docker to containerize the application with all dependencies:
 
 ```bash
-# Build with OIDC credentials
+# Build
 docker build \
   --build-arg VITE_AUTH_URL=oidc-provider-url \
   --build-arg VITE_AUTH_CLIENT_ID=client-id \
   -t geomap:latest \
   .
 
-# Run in production
+# Run
 docker run -d \
   -p 80:80 \
   -e POSTGRES_URL=<connection string like postgresql://user:pass@postgres-host:5432/geomap> \
