@@ -55,9 +55,12 @@ class GLAD():
     if not 'interval_table' in self._cache:
       print('Downloading interval table from GLAD...')
 
-      # Ignore SSL verification
-      response = BytesIO(requests.get(self._interval_id_url).content)
-
+      try:
+        response = BytesIO(requests.get(self._interval_id_url).content)
+      except:
+        # SSL fails sometimes
+        response = BytesIO(requests.get(self._interval_id_url).content, verify=False)
+      
       # Interval ID table
       self._interval_table = pd.read_excel(response, sheet_name='16d interval ID', 
                                             header=1, index_col='Year')
@@ -88,8 +91,13 @@ class GLAD():
     '''
     if not 'tile_geojson' in self._cache:
       print('Downloading tile geojson from GLAD...')
-      # Ignore SSL verification
-      response = BytesIO(requests.get(self._tile_geojson_url).content)
+
+      try:
+        response = BytesIO(requests.get(self._tile_geojson_url).content)
+      except:
+        # SSL fails sometimes
+        response = BytesIO(requests.get(self._tile_geojson_url).content, verify=False)
+
       self._tile_geojson = gpd.read_file(response)
 
       self._cache.set('tile_geojson', self._tile_geojson)

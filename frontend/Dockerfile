@@ -15,7 +15,7 @@ RUN npm install
 # copy project files and folders to the current working directory (i.e. 'app' folder)
 COPY . .
 
-ENV PORT 3000
-EXPOSE 3000
+ENV PORT 5173
+EXPOSE 5173
 
 CMD [ "npm", "run", "dev"]

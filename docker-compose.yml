@@ -16,6 +16,7 @@ services:
 
   pgadmin:
     image: dpage/pgadmin4:latest
+    restart: unless-stopped
     environment:
       - PGADMIN_DEFAULT_EMAIL=admin@example.com
       - PGADMIN_DEFAULT_PASSWORD=password
@@ -25,13 +26,13 @@ services:
       - PGADMIN_CONFIG_PROXY_X_HOST_COUNT=1
     depends_on:
       - postgres
-    restart: unless-stopped
-
+    
   python:
     build: python
     restart: unless-stopped
     depends_on: 
-    - postgres
+      postgres:
+        condition: service_healthy
     environment:
       - S3_URL=${S3_URL}
       - S3_ACCESS_KEY=${S3_ACCESS_KEY}
@@ -46,10 +47,8 @@ services:
     develop:
       watch:
         - action: sync
-          path: ./frontend
-          target: /app
-          ignore:
-            - node_modules/
+          path: ./frontend/src
+          target: /app/src
     depends_on:
       - python
     environment:
