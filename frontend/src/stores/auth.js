@@ -28,7 +28,7 @@ export const useAuthStore = defineStore('auth', () => {
       // If the token is expired, try silent renew first before redirecting to login
       if (existingUser.expired) {
         try {
-          await userManager.signinSilent()
+          existingUser = await userManager.signinSilent()
         } catch (silentError) {
           console.error('Silent signin error:', silentError)
           await userManager.signinRedirect() // fallback to redirect if silent fails
