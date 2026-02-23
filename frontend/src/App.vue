@@ -15,12 +15,12 @@ const date = ref(new Date().toISOString().split('T')[0])
 const meta = ref({})
 const layers = ref({})
 
-watch(date, (newDate) => {
+watch(date, async(newDate) => {
   // Ignore invalid date
   if (new Date(newDate) == NaN || new Date(newDate) < new Date('1997-01-01')) {
     return
   } else {
-    fetchLayers(newDate)
+    layers.value = await fetchLayers(newDate)
   }
 })
 
