@@ -22,44 +22,47 @@ export const useAuthStore = defineStore('auth', () => {
   const authenticated = computed(() => username.value !== null)
 
   const init = async () => {
-    // If a user is already stored, use it
-    const existingUser = await userManager.getUser()
-    if (existingUser) {
-      // If the token is expired, try silent renew first before redirecting to login
-      if (existingUser.expired) {
-        try {
-          existingUser = await userManager.signinSilent()
-        } catch (silentError) {
-          console.error('Silent signin error:', silentError)
-          await userManager.signinRedirect() // fallback to redirect if silent fails
-          return
-        }
+    // Handle OIDC callback route first
+    if (window.location.pathname === '/callback') {
+      let callbackUser = null
+      try {
+        await userManager.signinRedirectCallback()
+        callbackUser = await userManager.getUser()
+      } catch (cbError) {
+        console.error('Callback processing error:', cbError)
+      } finally {
+        // Always clean up callback URL
+        window.history.replaceState({}, document.title, '/')
       }
-      
-      username.value = existingUser.profile.preferred_username
-      token.value = existingUser.access_token
+      if (callbackUser) {
+        username.value = callbackUser.profile.preferred_username
+        token.value = callbackUser.access_token
+      }
       return
     }
 
-    // If we're on the OIDC callback route, process the redirect response
-    if (window.location.pathname === '/callback') {
-      try {
-        await userManager.signinRedirectCallback()
-        // Remove the callback query params from the URL
-        window.history.replaceState({}, document.title, '/')
-        // after callback, user should be available
-        const user = await userManager.getUser()
-        if (user) {
-          username.value = user.profile.preferred_username
-          token.value = user.access_token
+    // Check for existing user
+    let user = await userManager.getUser()
+    if (user) {
+      if (user.expired) {
+        try {
+          user = await userManager.signinSilent()
+        } catch (silentError) {
+          console.error('Silent signin error:', silentError)
+          await userManager.signinRedirect()
+          // Clean up URL in case redirect returns to callback
+          window.history.replaceState({}, document.title, '/')
+          return
         }
-        return
-      } catch (cbError) {
-        console.error('Callback processing error:', cbError)
       }
+      if (user) {
+        username.value = user.profile.preferred_username
+        token.value = user.access_token
+      }
+      return
     }
 
-    // No user and not on callback -> start signin flow
+    // No user found, start signin flow
     await userManager.signinRedirect()
   }
 
