@@ -1,22 +1,12 @@
 <script setup>
-import axios from "axios"
-import { ref, watch } from "vue"
+
+import { onMounted, ref, watch } from "vue"
 import { Map, Layers, Sources, MapControls, Interactions, Styles } from "vue3-openlayers"
-import { getAccessToken } from './auth'
 import GeoJSON from 'ol/format/GeoJSON'
+import { useAuthStore } from '@/stores/auth'
+import { init as initAPI, fetchMeta, fetchLayers } from '@/lib/api'
 
-
-const api = axios.create({
-  baseURL: '/api'
-})
-
-api.interceptors.request.use(async (config) => {
-  const token = await getAccessToken()
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
-  }
-  return config
-})
+const authStore = useAuthStore()
 const center = ref([0, 0])
 const zoom = ref(2)
 const projection = ref("EPSG:4326")
@@ -25,12 +15,12 @@ const date = ref(new Date().toISOString().split('T')[0])
 const meta = ref({})
 const layers = ref({})
 
-watch(date, (newDate) => {
+watch(date, async(newDate) => {
   // Ignore invalid date
   if (new Date(newDate) == NaN || new Date(newDate) < new Date('1997-01-01')) {
     return
   } else {
-    fetchLayers()
+    layers.value = await fetchLayers(newDate)
   }
 })
 
@@ -52,18 +42,12 @@ function isEmpty(obj) {
     return Object.keys(obj).length === 0;
 }
 
-async function fetchMeta() {
-  const response = await api.get('/meta')
-  meta.value = response.data
-  fetchLayers()
-}
+onMounted(async () => {
+  initAPI(authStore.token)
 
-async function fetchLayers() {
-  const response = await api.get(`/layers?date=${date.value}`)
-  layers.value = response.data.sort((a, b) => a.zlevel - b.zlevel)
-}
-
-fetchMeta()
+  meta.value = await fetchMeta()
+  layers.value = await fetchLayers(date.value)
+})
 </script>
 
 <template>
